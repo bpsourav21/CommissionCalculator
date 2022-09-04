@@ -2,7 +2,6 @@ import moment from 'moment';
 import { InputDataDto } from './model/InputData';
 import * as _ from 'underscore'
 import fs from 'fs/promises'
-import path from 'path'
 import axios from 'axios';
 import { CommissionConfigDto } from './model/CommissionConfig';
 
@@ -125,7 +124,7 @@ const commissionConfigPromises = () => {
 }
 
 const [args] = process.argv.slice(2);
-const fileLocation = path.join(__dirname, args);
+const fileLocation = args;
 fs.readFile(fileLocation, 'utf8')
     .then((data) => {
         let parsedData: InputDataDto[] = JSON.parse(data.toString());

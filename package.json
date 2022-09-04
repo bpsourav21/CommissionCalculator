@@ -1,12 +1,12 @@
 {
-  "name": "paysera",
+  "name": "CommissionCalculator",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build": "npx tsc",
     "start": "npm run build && node ./dist/index.js",
-    "dev": "nodemon ./src/index.ts",
+    "dev": "nodemon ./src/index.ts ./src/input.json",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
