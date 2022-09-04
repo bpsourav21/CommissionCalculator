@@ -4,18 +4,17 @@ import * as _ from 'underscore'
 import fs from 'fs/promises'
 import path from 'path'
 import axios from 'axios';
+import { CommissionConfigDto } from './model/CommissionConfig';
 
-const calculateCommissionFeeForInputData = (inputData: InputDataDto[], commissionConfig: any[]) => {
-    const [cashInConfig, naturalPersonCashOutConfig, legalPersonCashOutConfig] = commissionConfig;
-
+const calculateCommissionFeeForInputData = (inputData: InputDataDto[], commissionConfig: CommissionConfigDto) => {
     const calculatePercents = (percents: number): number => percents / 100;
 
     const commissionFeeForCashIn = (item: InputDataDto): number => {
         const commissionFee =
-            item.operation.amount * calculatePercents(cashInConfig.percents);
+            item.operation.amount * calculatePercents(commissionConfig.cashIn.percents);
 
-        return commissionFee > cashInConfig.max.amount
-            ? cashInConfig.max.amount
+        return commissionFee > commissionConfig.cashIn.max.amount
+            ? commissionConfig.cashIn.max.amount
             : commissionFee;
     }
 
@@ -44,18 +43,18 @@ const calculateCommissionFeeForInputData = (inputData: InputDataDto[], commissio
                 let fee: number = 0;
                 let isLimitExceeded: boolean = false
 
-                if (total > naturalPersonCashOutConfig.week_limit.amount) {
+                if (total > commissionConfig.cashout_natural.week_limit.amount) {
                     // Below limit cash out is free
                     let weeklyLimit = prev.isLimitExceeded
                         ? 0
-                        : naturalPersonCashOutConfig.week_limit.amount
+                        : commissionConfig.cashout_natural.week_limit.amount
                     // commission calculated after exceeding limit amount
                     let amount = item.operation.amount >= weeklyLimit
                         ? item.operation.amount - weeklyLimit
                         : item.operation.amount - (total - weeklyLimit)
                     fee =
                         amount *
-                        calculatePercents(naturalPersonCashOutConfig.percents);
+                        calculatePercents(commissionConfig.cashout_natural.percents);
                     isLimitExceeded = true
                 }
                 else {
@@ -74,8 +73,8 @@ const calculateCommissionFeeForInputData = (inputData: InputDataDto[], commissio
     }
 
     const commissionFeeForJuridicalPersonCashOut = (item: InputDataDto): number => {
-        if (item.operation.amount >= legalPersonCashOutConfig.min.amount) {
-            return item.operation.amount * calculatePercents(legalPersonCashOutConfig.percents)
+        if (item.operation.amount >= commissionConfig.cashout_legal.min.amount) {
+            return item.operation.amount * calculatePercents(commissionConfig.cashout_legal.percents)
         }
         else {
             return 0;
@@ -132,7 +131,13 @@ fs.readFile(fileLocation, 'utf8')
         let parsedData: InputDataDto[] = JSON.parse(data.toString());
         commissionConfigPromises()
             .then(res => {
-                const commissionConfig = _.map(res, r => r.data);
+                const config = _.map(res, r => r.data);
+                const commissionConfig: CommissionConfigDto = {
+                    cashIn: config[0],
+                    cashout_natural: config[1],
+                    cashout_legal: config[2]
+                }
+
                 calculateCommissionFeeForInputData(parsedData, commissionConfig);
             })
             .catch(err => {
